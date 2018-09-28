@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:aop="http://www.springframework.org/schema/aop"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+    http://www.springframework.org/schema/beans/spring-beans.xsd
+    http://www.springframework.org/schema/context
+    http://www.springframework.org/schema/context/spring-context.xsd
+    http://www.springframework.org/schema/tx
+    http://www.springframework.org/schema/tx/spring-tx.xsd
+    http://www.springframework.org/schema/aop
+    http://www.springframework.org/schema/aop/spring-aop-4.3.xsd">
+
+
+    <!--spring.xml没有分模块配置：全部写在了一个xml中，根据需求分即可-->
+
+    <!--开启spring注释要扫描的包-->
+    <context:component-scan base-package="com.gavin"/>
+
+
+    <!--配置hibernateTemplate，相当于hibernate中的session，对session进一步的封装-->
+    <bean id="hibernateTemplate" class="org.springframework.orm.hibernate5.HibernateTemplate">
+        <!--注入用spring提供的一个SessionFactory工厂-->
+        <property name="sessionFactory" ref="sessionFactory"/>
+    </bean>
+
+    <!--保留hibernate.cfg.xml：-->
+    <!--配置SessionFactory：让spring接管SessionFactory的创建。用spring提供的一个SessionFactory：LocalSessionFactoryBean-->
+    <!--<bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">-->
+        <!--注入主配置文件(hibernamte.cfg.xml)，加载主配置文件中的三部分  1.dataSource  2.可选配置  3.映射文件-->
+        <!--<property name="configLocation" value="classpath:hibernate.cfg.xml"/>-->
+    <!--</bean>-->
+
+
+    <!--不保留hibernate.cfg.xml：-->
+    <!--配置SessionFactory：让spring接管SessionFactory的创建。用spring提供的一个SessionFactory：LocalSessionFactoryBean-->
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate5.LocalSessionFactoryBean">
+        <!--第一部分：链接数据库的 dataSource-->
+        <property name="dataSource" ref="dataSource"/>
+        <!--第二部分：hibernate的可选配置-->
+        <property name="hibernateProperties">
+            <props>
+                <!--是否显示hibernate生成的sql语句-->
+                <prop key="hibernate.show_sql">true</prop>
+                <!--是否使用格式化输出sql语句到控制台-->
+                <prop key="hibernate.format_sql">true</prop>
+                <!--是否建表，采用何种方式建表-->
+                <prop key="hibernate.hbm2ddl.auto">update</prop>
+                <!--把session和线程绑定，从而实现一个线程只有一个session-->
+                <!--是spring把sesion绑定到当前线程上的配置-->
+                <prop key="hibernate.current_session_context_class">org.springframework.orm.hibernate5.SpringSessionContext</prop>
+            </props>
+        </property>
+        <!--第三部分：对于注解，指定实体类所在的包，当创建sessionFactory时，会去该包中扫描实体类上的注解，从而生成映射配置-->
+        <property name="packagesToScan">
+            <array>
+                <value>com.gavin.domain</value>
+            </array>
+        </property>
+    </bean>
+
+    <!--数据库连接池-->
+    <bean id="dataSource" class="com.mchange.v2.c3p0.ComboPooledDataSource">
+        <property name="driverClass" value="com.mysql.cj.jdbc.Driver"/>
+        <property name="jdbcUrl" value="jdbc:mysql:///cst?useSSL=false&amp;serverTimezone=Hongkong&amp;useUnicode=true&amp;characterEncoding=utf-8"/>
+        <property name="user" value="root"/>
+        <property name="password" value="1234"/>
+    </bean>
+
+
+    <!--配置事务管理器-->
+    <bean id="transactionManager" class="org.springframework.orm.hibernate5.HibernateTransactionManager">
+        <property name="sessionFactory" ref="sessionFactory"/> <!--sessionFactory有dataSource-->
+    </bean>
+
+
+    <!--开启spring对注解事务的支持-->
+    <tx:annotation-driven/>
+
+</beans>
